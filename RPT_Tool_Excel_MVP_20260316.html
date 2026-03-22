@@ -1,0 +1,1062 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>FTP Tool Excel — Báo cáo Tiến độ</title>
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.5.1" integrity="sha384-jb8JQMbMoBUzgWatfe6COACi2ljcDdZQ2OxczGA3bGNeWe+6DChMTBJemed7ZnvJ" crossorigin="anonymous"></script>
+<style>
+:root{
+  --navy:#0c1f3f;--navy2:#162d50;--blue:#2563eb;--blue-light:#dbeafe;
+  --green:#16a34a;--green-light:#dcfce7;--orange:#ea580c;--orange-light:#ffedd5;
+  --red:#dc2626;--red-light:#fee2e2;--yellow:#d97706;--yellow-light:#fef3c7;
+  --purple:#7c3aed;--purple-light:#ede9fe;--teal:#0d9488;--teal-light:#ccfbf1;
+  --gray:#6b7280;--gray-light:#f3f4f6;--white:#fff;
+  --shadow:0 1px 3px rgba(0,0,0,.08),0 1px 2px rgba(0,0,0,.05);
+  --shadow-md:0 4px 12px rgba(0,0,0,.10);--r:10px;--gap:16px;
+}
+*{margin:0;padding:0;box-sizing:border-box;}
+body{font-family:'Segoe UI',-apple-system,BlinkMacSystemFont,Roboto,sans-serif;background:#f0f2f5;color:#1e293b;line-height:1.6;font-size:14px;}
+
+/* HEADER */
+.hdr{background:linear-gradient(135deg,var(--navy) 0%,#1e3a5f 100%);color:#fff;padding:22px 32px 0;position:sticky;top:0;z-index:200;box-shadow:0 2px 8px rgba(0,0,0,.2);}
+.hdr-top{display:flex;justify-content:space-between;align-items:flex-start;flex-wrap:wrap;gap:10px;margin-bottom:14px;}
+.hdr-title{font-size:21px;font-weight:800;letter-spacing:-.3px;}
+.hdr-sub{font-size:12px;color:rgba(255,255,255,.65);margin-top:3px;}
+.hdr-badge{display:inline-flex;align-items:center;gap:6px;background:rgba(37,99,235,.3);border:1px solid rgba(37,99,235,.5);padding:5px 14px;border-radius:20px;font-size:12px;font-weight:700;}
+.hdr-badge .dot{width:8px;height:8px;border-radius:50%;background:#60a5fa;animation:pulse 2s infinite;}
+@keyframes pulse{0%,100%{opacity:1;}50%{opacity:.4;}}
+
+/* NAV */
+.nav{display:flex;gap:2px;flex-wrap:wrap;}
+.nb{padding:9px 18px;border:none;border-radius:6px 6px 0 0;background:rgba(255,255,255,.08);color:rgba(255,255,255,.7);font-size:13px;font-weight:600;cursor:pointer;transition:all .2s;}
+.nb:hover{background:rgba(255,255,255,.16);color:#fff;}
+.nb.on{background:#f0f2f5;color:var(--navy);}
+
+/* EXPORT BTN */
+.export-bar{background:#fff;border-bottom:2px solid #e2e8f0;padding:10px 32px;display:flex;gap:10px;align-items:center;flex-wrap:wrap;}
+.btn-export{display:inline-flex;align-items:center;gap:6px;padding:7px 18px;border:none;border-radius:7px;font-size:13px;font-weight:700;cursor:pointer;transition:all .15s;}
+.btn-xls{background:#217346;color:#fff;}
+.btn-xls:hover{background:#1a5c38;}
+.btn-pdf{background:var(--blue);color:#fff;}
+.btn-pdf:hover{background:#1d4ed8;}
+.export-note{font-size:12px;color:var(--gray);}
+
+/* MAIN */
+.wrap{max-width:1440px;margin:0 auto;padding:20px 24px 48px;}
+.sec{display:none;animation:fi .3s ease;}
+.sec.on{display:block;}
+@keyframes fi{from{opacity:0;transform:translateY(6px);}to{opacity:1;transform:translateY(0);}}
+
+/* KPI */
+.kpi-row{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:var(--gap);margin-bottom:var(--gap);}
+.kpi{background:var(--white);border-radius:var(--r);padding:18px 20px;box-shadow:var(--shadow);border-left:4px solid var(--blue);cursor:default;transition:transform .15s;}
+.kpi:hover{transform:translateY(-2px);}
+.kpi.g{border-left-color:var(--green);}
+.kpi.o{border-left-color:var(--orange);}
+.kpi.r{border-left-color:var(--red);}
+.kpi.p{border-left-color:var(--purple);}
+.kpi.t{border-left-color:var(--teal);}
+.kpi.y{border-left-color:var(--yellow);}
+.kpi-lbl{font-size:11px;color:var(--gray);text-transform:uppercase;letter-spacing:.8px;font-weight:700;}
+.kpi-val{font-size:28px;font-weight:800;margin:3px 0 1px;}
+.kpi-sub{font-size:11px;color:var(--gray);}
+
+/* CARDS */
+.g2{display:grid;grid-template-columns:repeat(auto-fit,minmax(400px,1fr));gap:var(--gap);margin-bottom:var(--gap);}
+.g3{display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:var(--gap);margin-bottom:var(--gap);}
+.card{background:var(--white);border-radius:var(--r);padding:20px 22px;box-shadow:var(--shadow);}
+.card.full{grid-column:1/-1;}
+.card-ttl{font-size:14px;font-weight:800;margin-bottom:14px;display:flex;align-items:center;gap:7px;}
+.ic{font-size:17px;}
+
+/* PROGRESS */
+.prg-row{display:flex;align-items:center;gap:10px;margin-bottom:10px;}
+.prg-lbl{min-width:160px;font-size:13px;font-weight:600;}
+.prg-track{flex:1;height:20px;background:#f1f5f9;border-radius:10px;overflow:hidden;}
+.prg-fill{height:100%;border-radius:10px;display:flex;align-items:center;justify-content:flex-end;padding-right:8px;font-size:11px;font-weight:800;color:#fff;min-width:28px;transition:width 1s ease;}
+.pf-b{background:linear-gradient(90deg,#2563eb,#3b82f6);}
+.pf-g{background:linear-gradient(90deg,#16a34a,#22c55e);}
+.pf-o{background:linear-gradient(90deg,#ea580c,#f97316);}
+.pf-r{background:linear-gradient(90deg,#dc2626,#ef4444);}
+.pf-p{background:linear-gradient(90deg,#7c3aed,#8b5cf6);}
+.pf-y{background:linear-gradient(90deg,#d97706,#fbbf24);}
+.prg-dl{min-width:80px;font-size:11px;color:var(--gray);text-align:right;}
+
+/* TABLE */
+.tbl{width:100%;border-collapse:collapse;font-size:13px;}
+.tbl thead th{text-align:left;padding:9px 12px;border-bottom:2px solid #e2e8f0;color:var(--gray);font-weight:700;font-size:11px;text-transform:uppercase;letter-spacing:.5px;white-space:nowrap;}
+.tbl tbody td{padding:9px 12px;border-bottom:1px solid #f1f5f9;vertical-align:top;}
+.tbl tbody tr:hover{background:#f8fafc;}
+.tbl tbody tr:last-child td{border-bottom:none;}
+
+/* BADGE */
+.bd{display:inline-block;padding:2px 9px;border-radius:11px;font-size:11px;font-weight:700;white-space:nowrap;}
+.bd-done{background:var(--green-light);color:#166534;}
+.bd-prog{background:var(--blue-light);color:#1e40af;}
+.bd-pend{background:var(--yellow-light);color:#92400e;}
+.bd-block{background:var(--red-light);color:#991b1b;}
+.bd-miss{background:#fee2e2;color:#991b1b;}
+.bd-Tool Excel{background:#ede9fe;color:#5b21b6;}
+.bd-full{background:#f3f4f6;color:#374151;}
+.bd-crit{background:var(--red-light);color:#7f1d1d;}
+.bd-high{background:var(--orange-light);color:#9a3412;}
+.bd-med{background:var(--yellow-light);color:#78350f;}
+
+/* SCREEN CARD */
+.sc-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(320px,1fr));gap:var(--gap);}
+.sc-card{background:var(--white);border-radius:var(--r);padding:18px 20px;box-shadow:var(--shadow);border-top:4px solid #e2e8f0;cursor:pointer;transition:all .2s;}
+.sc-card:hover{box-shadow:var(--shadow-md);transform:translateY(-2px);}
+.sc-card.c-done{border-top-color:var(--green);}
+.sc-card.c-prog{border-top-color:var(--blue);}
+.sc-card.c-pend{border-top-color:var(--yellow);}
+.sc-card.c-block{border-top-color:var(--red);}
+.sc-head{display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:8px;}
+.sc-id{font-size:18px;font-weight:900;color:var(--navy);}
+.sc-name{font-size:13px;font-weight:700;margin-bottom:6px;}
+.sc-desc{font-size:12px;color:var(--gray);line-height:1.5;}
+.sc-meta{margin-top:8px;display:flex;gap:6px;flex-wrap:wrap;}
+
+/* DETAIL DRAWER */
+.drawer{display:none;background:var(--white);border:2px solid var(--blue);border-radius:var(--r);padding:22px 24px;margin:10px 0 16px;box-shadow:var(--shadow-md);animation:fi .25s;}
+.drawer.open{display:block;}
+.drawer-close{float:right;background:#f1f5f9;border:none;border-radius:6px;padding:4px 12px;cursor:pointer;font-size:12px;font-weight:700;}
+.drawer-close:hover{background:#e2e8f0;}
+.drawer h4{font-size:14px;font-weight:800;margin-bottom:12px;color:var(--navy);}
+
+/* BLOCKER CARD */
+.blk-card{background:var(--white);border-left:4px solid var(--red);border-radius:8px;padding:14px 18px;margin-bottom:10px;box-shadow:var(--shadow);cursor:pointer;transition:all .15s;}
+.blk-card:hover{box-shadow:var(--shadow-md);transform:translateX(4px);}
+.blk-card.warn{border-left-color:var(--orange);}
+.blk-card.info{border-left-color:var(--blue);}
+.blk-ttl{font-size:14px;font-weight:700;margin-bottom:3px;}
+.blk-desc{font-size:12px;color:var(--gray);line-height:1.5;}
+.blk-meta{font-size:11px;color:var(--gray);margin-top:6px;display:flex;gap:14px;flex-wrap:wrap;}
+
+/* FORMULA BOX */
+.formula-box{background:linear-gradient(135deg,#0c1f3f,#1e3a5f);color:#fff;border-radius:var(--r);padding:22px 28px;margin-bottom:var(--gap);text-align:center;}
+.formula-main{font-size:22px;font-weight:900;letter-spacing:.5px;margin:10px 0;}
+.formula-parts{display:flex;justify-content:center;gap:24px;flex-wrap:wrap;margin-top:12px;}
+.formula-part{background:rgba(255,255,255,.1);border-radius:8px;padding:10px 18px;text-align:center;}
+.formula-part .fl{font-size:11px;color:rgba(255,255,255,.6);text-transform:uppercase;letter-spacing:.5px;}
+.formula-part .fv{font-size:14px;font-weight:700;margin-top:2px;}
+
+/* CHART */
+.ch-wrap{position:relative;height:260px;}
+.ch-wrap canvas{max-height:260px;}
+
+/* TIMELINE */
+.timeline{display:flex;gap:0;margin:14px 0;overflow-x:auto;padding-bottom:4px;}
+.tl-step{flex:1;min-width:100px;text-align:center;position:relative;padding:0 4px;}
+.tl-step::before{content:'';position:absolute;top:16px;left:-50%;right:50%;height:2px;background:#e2e8f0;}
+.tl-step:first-child::before{display:none;}
+.tl-step.done::before{background:var(--green);}
+.tl-step.active::before{background:var(--blue);}
+.tl-dot{width:32px;height:32px;border-radius:50%;margin:0 auto 6px;display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:800;position:relative;z-index:1;}
+.tl-dot.done{background:var(--green);color:#fff;}
+.tl-dot.active{background:var(--blue);color:#fff;box-shadow:0 0 0 4px rgba(37,99,235,.2);}
+.tl-dot.pend{background:#e2e8f0;color:var(--gray);}
+.tl-lbl{font-size:11px;font-weight:700;}
+.tl-date{font-size:10px;color:var(--gray);margin-top:1px;}
+
+/* ACCORDION */
+.acc-head{display:flex;justify-content:space-between;align-items:center;cursor:pointer;padding:12px 0;border-bottom:1px solid #f1f5f9;font-weight:700;}
+.acc-head:hover{color:var(--blue);}
+.acc-arrow{font-size:11px;transition:transform .2s;color:var(--gray);}
+.acc-head.open .acc-arrow{transform:rotate(90deg);}
+.acc-body{display:none;padding:12px 0 4px;}
+.acc-body.open{display:block;}
+
+/* TOOLTIP */
+.tip{position:relative;cursor:help;}
+.tip .tip-text{visibility:hidden;opacity:0;background:#1e293b;color:#fff;font-size:11px;padding:5px 9px;border-radius:5px;position:absolute;bottom:120%;left:50%;transform:translateX(-50%);white-space:nowrap;z-index:10;transition:opacity .15s;}
+.tip:hover .tip-text{visibility:visible;opacity:1;}
+
+/* PRINT */
+@media print{.hdr{position:relative;}.nav,.export-bar{display:none;}.sec{display:block!important;page-break-before:always;}.sec:first-child{page-break-before:auto;}}
+
+/* SCROLLBAR */
+::-webkit-scrollbar{width:5px;height:5px;}
+::-webkit-scrollbar-track{background:#f1f5f9;}
+::-webkit-scrollbar-thumb{background:#94a3b8;border-radius:3px;}
+
+/* LINK BTN */
+.lnk{display:inline-block;padding:3px 11px;background:var(--blue-light);color:var(--blue);border-radius:6px;font-size:11px;font-weight:700;cursor:pointer;border:1px solid #bfdbfe;transition:all .15s;}
+.lnk:hover{background:#bfdbfe;}
+
+/* PROPOSAL */
+.prop{background:linear-gradient(135deg,#eff6ff,#f0fdf4);border:1px solid #bfdbfe;border-radius:var(--r);padding:16px 20px;margin-bottom:10px;}
+.prop-ttl{font-size:13px;font-weight:800;color:var(--blue);margin-bottom:5px;}
+.prop-body{font-size:12px;line-height:1.6;}
+
+/* NOTE BOX */
+.note{background:#fffbeb;border:1px solid #fcd34d;border-radius:8px;padding:12px 16px;font-size:12px;margin-bottom:var(--gap);}
+.note strong{color:var(--yellow);}
+</style>
+</head>
+<body>
+
+<!-- HEADER -->
+<div class="hdr">
+  <div class="hdr-top">
+    <div>
+      <div class="hdr-title">&#128202; FTP Tool Excel — Báo cáo Tiến độ & Nội dung</div>
+      <div class="hdr-sub">Trung tâm ALM &bull; Ngày báo cáo: 16/03/2026 &bull; Deadline Tool Excel: <strong style="color:#fbbf24">30/06/2026</strong> &bull; Confidential</div>
+    </div>
+    <div class="hdr-badge"><span class="dot"></span> Đang triển khai — 45% hoàn thành</div>
+  </div>
+  <nav class="nav">
+    <button class="nb on"  onclick="go('ov')">&#127919; Tổng quan</button>
+    <button class="nb" onclick="go('sc')">&#128421; Tính năng &amp; Module</button>
+    <button class="nb" onclick="go('rp')">&#128202; Báo cáo FTP</button>
+    <button class="nb" onclick="go('dt')">&#128451; Dữ liệu &amp; Tích hợp</button>
+    <button class="nb" onclick="go('bl')">&#9888;&#65039; Vướng mắc &amp; Rủi ro</button>
+    <button class="nb" onclick="go('nx')">&#128640; Sau Tool Excel</button>
+  </nav>
+</div>
+
+<!-- EXPORT BAR -->
+<div class="export-bar">
+  <button class="btn-export btn-xls" onclick="exportXLS()">&#128196; Xuất Excel (.xls)</button>
+  <button class="btn-export btn-pdf" onclick="window.print()">&#128438; In / Xuất PDF</button>
+  <span class="export-note">File Excel gồm: Tổng quan, Tiến độ Tính năng, Dữ liệu, Vướng mắc</span>
+</div>
+
+<div class="wrap">
+
+<!-- ================================================================ -->
+<!-- TAB 1: TỔNG QUAN -->
+<!-- ================================================================ -->
+<div id="sec-ov" class="sec on">
+
+   <!-- Timeline -->
+  <div class="card full" style="margin-bottom:var(--gap);">
+    <div class="card-ttl"><span class="ic">&#128197;</span> Lộ trình xây dựng Tool Excel</div>
+    <div class="timeline">
+      <div class="tl-step done">
+        <div class="tl-dot done">&#10003;</div>
+        <div class="tl-lbl">Thiết kế<br>Tính năng</div>
+        <div class="tl-date">T1-T2/2026</div>
+      </div>
+      <div class="tl-step active">
+        <div class="tl-dot active">2</div>
+        <div class="tl-lbl">Cấu trúc<br>dữ liệu</div>
+        <div class="tl-date">T2-T4/2026</div>
+      </div>
+      <div class="tl-step active">
+        <div class="tl-dot active">3</div>
+        <div class="tl-lbl">Xây dựng<br>Excel Tool</div>
+        <div class="tl-date">T4-T6/2026</div>
+      </div>
+      <div class="tl-step pend">
+        <div class="tl-dot pend">4</div>
+        <div class="tl-lbl">Test &amp;<br>Validation</div>
+        <div class="tl-date">T6/2026</div>
+      </div>
+      <div class="tl-step pend">
+        <div class="tl-dot pend">5</div>
+        <div class="tl-lbl"><strong>Giao phẩm MVP/&amp;<br> Tool Excel Delivery</strong></div>
+        <div class="tl-date" style="color:var(--orange);font-weight:800;">30/06/2026</div>
+      </div>
+      <div class="tl-step pend">
+        <div class="tl-dot pend">6</div>
+        <div class="tl-lbl">Lãnh đạo<br>Review GO/NO-GO</div>
+        <div class="tl-date">T7/2026</div>
+      </div>
+    </div>
+    <div class="note">
+      <strong>&#9733; Tool Excel Gate:</strong> Sau khi Tool Excel hoàn thành, Lãnh đạo review và ra quyết định <strong>GO/NO-GO</strong> để tiến sang Phase tiếp theo — xây dựng hệ thống IT tự động hoá.
+    </div>
+  </div>
+
+  <!-- Formula Box -->
+  <div class="formula-box">
+    <div style="font-size:13px;color:rgba(255,255,255,.7);text-transform:uppercase;letter-spacing:1px;">Công thức tính toán cốt lõi</div>
+    <div class="formula-main">NII = (Lending/Funding Rate − COF/VOF) × Balance</div>
+    <div class="formula-parts">
+      <div class="formula-part"><div class="fl">NII</div><div class="fv">Net Interest Income</div></div>
+      <div class="formula-part"><div class="fl">Lending/ Funding Rate</div><div class="fv">Lãi suất cho vay/ huy động (%/năm)</div></div>
+      <div class="formula-part"><div class="fl">COF/ VOF</div><div class="fv">Chi phí vốn FTP (%/năm)</div></div>
+      <div class="formula-part"><div class="fl">Balance</div><div class="fv">Dư nợ bình quân (VNĐ)</div></div>
+    </div>
+  </div>
+
+  <!-- KPIs -->
+  <div class="kpi-row">
+    <div class="kpi g"><div class="kpi-lbl">Tiến độ Tool Excel</div><div class="kpi-val" style="color:var(--green)">45%</div><div class="kpi-sub">Đang thực hiện</div></div>
+    <div class="kpi o"><div class="kpi-lbl">Deadline Tool Excel</div><div class="kpi-val" style="color:var(--orange);font-size:22px;">30/06/2026</div><div class="kpi-sub">Còn ~15 tuần</div></div>
+    <div class="kpi"><div class="kpi-lbl">Tính năng hoàn thành</div><div class="kpi-val">5 / 11</div><div class="kpi-sub">Screens thiết kế xong</div></div>
+    <div class="kpi p"><div class="kpi-lbl">Báo cáo đầu ra</div><div class="kpi-val" style="color:var(--purple)">3 + 5-7</div><div class="kpi-sub">Tổng hợp + Sub-product</div></div>
+    <div class="kpi r"><div class="kpi-lbl">Vướng mắc cần xử lý</div><div class="kpi-val" style="color:var(--red)">6</div><div class="kpi-sub">3 Critical · 2 High · 1 Med</div></div>
+    <div class="kpi t"><div class="kpi-lbl">Sản phẩm phủ</div><div class="kpi-val" style="color:var(--teal)">5</div><div class="kpi-sub">TW · CDL · CRC · PL · Synloan</div></div>
+  </div>
+
+
+  <!-- Progress by Screen -->
+  <div class="g2">
+    <div class="card">
+      <div class="card-ttl"><span class="ic">&#128200;</span> Tiến độ từng tính năng</div>
+      <div class="ch-wrap"><canvas id="chartScreenProg"></canvas></div>
+    </div>
+    <div class="card">
+      <div class="card-ttl"><span class="ic">&#128202;</span> Phân bổ 11 tính năng theo loại</div>
+      <div class="ch-wrap"><canvas id="chartScreenType"></canvas></div>
+    </div>
+  </div>
+
+  <!-- What is Tool Excel -->
+  <div class="card full">
+    <div class="card-ttl"><span class="ic">&#128218;</span> Tool Excel MVP là gì? — Tóm tắt cho Lãnh đạo</div>
+    <div class="g3" style="margin-bottom:0;">
+      <div style="background:var(--blue-light);border-radius:8px;padding:16px;">
+        <div style="font-weight:800;color:var(--blue);margin-bottom:6px;">&#127963; Mục đích</div>
+        <div style="font-size:12px;">Công cụ Excel chạy dữ liệu <strong>thực tế</strong> từ hệ thống của Fecredit/ODS/CMS/LMS để tính toán P&amp;L theo phương pháp FTP — xác định từng sản phẩm / kênh bán hàng đang mang lại bao nhiêu lợi nhuận ròng sau khi trừ chi phí vốn.</div>
+      </div>
+      <div style="background:var(--green-light);border-radius:8px;padding:16px;">
+        <div style="font-weight:800;color:var(--green);margin-bottom:6px;">&#128200; Phân tích 4 chiều</div>
+        <div style="font-size:12px;"><strong>Sản phẩm</strong> × <strong>Kênh bán</strong> × <strong>Kỳ hạn</strong> × <strong>Tháng</strong> — cho phép biết chính xác đâu là nguồn lợi nhuận và đâu là rủi ro tập trung.</div>
+      </div>
+      <div style="background:var(--yellow-light);border-radius:8px;padding:16px;">
+        <div style="font-weight:800;color:var(--yellow);margin-bottom:6px;">&#128640; Cột mốc chiến lược</div>
+        <div style="font-size:12px;">TOOL EXCEL là <strong>bằng chứng thực tế</strong> trước khi đầu tư hệ thống IT lớn. Lãnh đạo xem kết quả thực và quyết định có tiến hành tự động hoá hay không.</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ================================================================ -->
+<!-- TAB 2: tính năng & MODULE -->
+<!-- ================================================================ -->
+<div id="sec-sc" class="sec">
+  <div class="kpi-row">
+    <div class="kpi g"><div class="kpi-lbl">Hoàn thành</div><div class="kpi-val" style="color:var(--green)">5</div><div class="kpi-sub">Fn1, Fn2, Fn3, Fn4, PL1</div></div>
+    <div class="kpi"><div class="kpi-lbl">Đang thực hiện</div><div class="kpi-val" style="color:var(--blue)">4</div><div class="kpi-sub">Fn4A, Fn4B, Fn5, Fn6</div></div>
+    <div class="kpi o"><div class="kpi-lbl">Chưa bắt đầu</div><div class="kpi-val" style="color:var(--orange)">2</div><div class="kpi-sub">Fn7, REF (chờ dữ liệu)</div></div>
+    <div class="kpi y"><div class="kpi-lbl">TOOL EXCEL scope</div><div class="kpi-val" style="color:var(--yellow)">9/11</div><div class="kpi-sub">Screens trong phạm vi TOOL EXCEL</div></div>
+  </div>
+
+  <!-- Progress bars -->
+  <div class="card full" style="margin-bottom:var(--gap);">
+    <div class="card-ttl"><span class="ic">&#128203;</span> Tiến độ chi tiết từng tính năng (click tên để xem mô tả)</div>
+    <div id="scPrgList"></div>
+  </div>
+
+  <!-- Screen cards -->
+  <div class="card-ttl" style="margin:4px 0 12px;"><span class="ic">&#128421;</span> Chi tiết 11 tính năng — Click để mở rộng</div>
+  <div class="sc-grid" id="scGrid"></div>
+  <div class="drawer" id="sc-drawer">
+    <button class="drawer-close" onclick="closeDrawer('sc-drawer')">&#10005; Đóng</button>
+    <div id="sc-drawer-content"></div>
+  </div>
+</div>
+
+<!-- ================================================================ -->
+<!-- TAB 3: BÁO CÁO FTP -->
+<!-- ================================================================ -->
+<div id="sec-rp" class="sec">
+  <div class="kpi-row">
+    <div class="kpi g"><div class="kpi-lbl">Báo cáo chính</div><div class="kpi-val" style="color:var(--green)">3</div><div class="kpi-sub">Tổng hợp · Tenor · Product</div></div>
+    <div class="kpi p"><div class="kpi-lbl">Báo cáo sản phẩm con</div><div class="kpi-val" style="color:var(--purple)">5–7</div><div class="kpi-sub">TW, CDL, CRC, PL×3, Synloan</div></div>
+    <div class="kpi"><div class="kpi-lbl">Chiều phân tích</div><div class="kpi-val">4</div><div class="kpi-sub">Product · Channel · Tenor · Month</div></div>
+    <div class="kpi t"><div class="kpi-lbl">Tenor buckets</div><div class="kpi-val" style="color:var(--teal)">22</div><div class="kpi-sub">ON → &gt;15 năm</div></div>
+  </div>
+
+  <!-- 3 Main Reports -->
+  <div class="card full" style="margin-bottom:var(--gap);">
+    <div class="card-ttl"><span class="ic">&#128196;</span> 3 Báo cáo chính</div>
+    <div class="g3" style="margin-bottom:0;">
+      <div style="border:2px solid var(--green);border-radius:10px;padding:18px;cursor:pointer;" onclick="openRpt('rpt1')">
+        <div style="display:flex;justify-content:space-between;"><span style="font-size:16px;font-weight:900;color:var(--green);">BC1</span><span class="bd bd-done">Đang XD</span></div>
+        <div style="font-weight:800;margin:6px 0 4px;">P&amp;L Tổng hợp (Fn4)</div>
+        <div style="font-size:12px;color:var(--gray);">Kết quả kinh doanh 4 chiều theo tháng. Dành cho Lãnh đạo xem toàn bộ portfolio FTP.</div>
+        <div style="margin-top:8px;font-size:11px;color:var(--green);font-weight:700;">&#9654; Click xem chi tiết</div>
+      </div>
+      <div style="border:2px solid var(--blue);border-radius:10px;padding:18px;cursor:pointer;" onclick="openRpt('rpt2')">
+        <div style="display:flex;justify-content:space-between;"><span style="font-size:16px;font-weight:900;color:var(--blue);">BC2</span><span class="bd bd-prog">Đang XD</span></div>
+        <div style="font-weight:800;margin:6px 0 4px;">P&amp;L theo Tenor (Fn4A)</div>
+        <div style="font-size:12px;color:var(--gray);">Phân tích theo kỳ hạn: biết vốn đang tập trung ở tenor ngắn hay dài, rủi ro tái định giá ở đâu.</div>
+        <div style="margin-top:8px;font-size:11px;color:var(--blue);font-weight:700;">&#9654; Click xem chi tiết</div>
+      </div>
+      <div style="border:2px solid var(--purple);border-radius:10px;padding:18px;cursor:pointer;" onclick="openRpt('rpt3')">
+        <div style="display:flex;justify-content:space-between;"><span style="font-size:16px;font-weight:900;color:var(--purple);">BC3</span><span class="bd bd-prog">Đang XD</span></div>
+        <div style="font-weight:800;margin:6px 0 4px;">P&amp;L theo Product (Fn4B)</div>
+        <div style="font-size:12px;color:var(--gray);">Chi tiết từng sản phẩm → sub-product. Xác định sản phẩm nào sinh lời cao/thấp nhất.</div>
+        <div style="margin-top:8px;font-size:11px;color:var(--purple);font-weight:700;">&#9654; Click xem chi tiết</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Report Detail Drawers -->
+  <div class="drawer" id="rpt1">
+    <button class="drawer-close" onclick="closeDrawer('rpt1')">&#10005;</button>
+    <h4>BC1 — P&amp;L Tổng hợp (Fn4): tính năng output cốt lõi</h4>
+    <p style="font-size:12px;margin-bottom:12px;">Đây là báo cáo chính mà Lãnh đạo sẽ xem hàng tháng. Tổng hợp toàn bộ NII theo 4 chiều.</p>
+    <table class="tbl"><thead><tr><th>Chỉ tiêu</th><th>Mô tả</th><th>Công thức / Nguồn</th></tr></thead>
+    <tbody>
+      <tr><td><strong>Số dư bình quân/ngày</strong></td><td>Average balance trong tháng</td><td>Σ(ENR daily) ÷ số ngày trong tháng</td></tr>
+      <tr><td><strong>LS FTP (COF/VOF)</strong></td><td>Chi phí vốn bình quân gia quyền</td><td>Lookup từ Fn1 COF/VOF matrix theo tenor</td></tr>
+      <tr><td><strong>LS cho vay</strong></td><td>Lãi suất cho vay bình quân gia quyền</td><td>Σ(Rate × Balance) ÷ Σ(Balance)</td></tr>
+      <tr><td><strong>Margin / Spread</strong></td><td>Chênh lệch lãi suất ròng</td><td>Lending/Funding Rate − COF/VOF</td></tr>
+      <tr><td><strong>Lãi cho vay (tổng)</strong></td><td>Tổng thu lãi từ khách hàng</td><td>Balance × Lending Rate ÷ 12</td></tr>
+      <tr><td><strong>Lãi FTP (COF/VOF)</strong></td><td>Chi phí vốn chuyển nội bộ</td><td>Balance × COF ÷ 12</td></tr>
+      <tr><td><strong>NII</strong></td><td>Lợi nhuận lãi ròng = KPI cuối cùng</td><td>Lãi cho vay − Lãi FTP</td></tr>
+    </tbody></table>
+    <div style="margin-top:10px;font-size:12px;"><strong>Bộ lọc:</strong> Ngày báo cáo · Sản phẩm · Kênh · Tenor · Nhóm nợ (Debt Group)</div>
+  </div>
+
+  <div class="drawer" id="rpt2">
+    <button class="drawer-close" onclick="closeDrawer('rpt2')">&#10005;</button>
+    <h4>BC2 — P&amp;L theo Tenor (Fn4A): Cross-tab Tenor × Product</h4>
+    <p style="font-size:12px;margin-bottom:10px;">Giúp nhận diện rủi ro tái định giá và cơ cấu kỳ hạn toàn bộ danh mục.</p>
+    <table class="tbl"><thead><tr><th>Tenor Bucket</th><th>Ngày Min</th><th>Ngày Max</th><th>Ví dụ sản phẩm</th></tr></thead>
+    <tbody>
+      <tr><td>ON (Overnight)</td><td>1</td><td>6</td><td>Synloan ngắn hạn</td></tr>
+      <tr><td>1M</td><td>28</td><td>45</td><td>CRC ngắn hạn</td></tr>
+      <tr><td>3M</td><td>85</td><td>105</td><td>CDL, PL ngắn</td></tr>
+      <tr><td>6M</td><td>166</td><td>195</td><td>TW, CDL trung hạn</td></tr>
+      <tr><td>12M</td><td>346</td><td>375</td><td>PL 12 tháng</td></tr>
+      <tr><td>1Y-2Y</td><td>376</td><td>900</td><td>PL, CDL 18-24M</td></tr>
+      <tr><td>2Y-3Y</td><td>901</td><td>1260</td><td>CDL, TW dài hạn</td></tr>
+      <tr><td>...đến &gt;15Y</td><td>5400+</td><td>∞</td><td>Synloan dài hạn</td></tr>
+    </tbody></table>
+  </div>
+
+  <div class="drawer" id="rpt3">
+    <button class="drawer-close" onclick="closeDrawer('rpt3')">&#10005;</button>
+    <h4>BC3 — P&amp;L theo Product (Fn4B): Phân tích từng sản phẩm</h4>
+    <p style="font-size:12px;margin-bottom:10px;">Drill-down từ Product → Sub-product → chi tiết giao dịch.</p>
+    <table class="tbl"><thead><tr><th>Sản phẩm</th><th>Sub-product</th><th>Đặc điểm FTP</th><th>Nguồn dữ liệu</th></tr></thead>
+    <tbody>
+      <tr><td><strong>TW</strong></td><td>Honda, CDL-TW, MBW, Key Dealer, Independent</td><td>Subvention model: Lãi ≈ 0%, NII = Subvention − COF</td><td>LMS (Finacle)</td></tr>
+      <tr><td><strong>CDL</strong></td><td>Điện tử, Đồ gia dụng, Nội thất...</td><td>Lãi suất cao hơn, tenor 12-60M</td><td>CMS + Intellect</td></tr>
+      <tr><td><strong>CRC</strong></td><td>IPP, ALOP, Standard</td><td>Revolving; IPP/ALOP = 0% interest (promo)</td><td>CMS (primary)</td></tr>
+      <tr><td><strong>PL_NTB</strong></td><td>—</td><td>New-to-Bank, rủi ro cao hơn</td><td>LMS</td></tr>
+      <tr><td><strong>PL_Xsell</strong></td><td>—</td><td>Cross-sell, khách hàng hiện tại</td><td>LMS</td></tr>
+      <tr><td><strong>PL_Topup</strong></td><td>—</td><td>Topup, khách hàng loyal</td><td>LMS</td></tr>
+      <tr><td><strong>Synloan</strong></td><td>—</td><td>Nhập tay (ALM), hợp vốn</td><td>Manual (Fn3)</td></tr>
+    </tbody></table>
+  </div>
+
+  <!-- Sub-product reports -->
+  <div class="card full">
+    <div class="card-ttl"><span class="ic">&#128203;</span> Báo cáo sản phẩm con (5–7 báo cáo, Fn5 + Fn6)</div>
+    <div style="overflow-x:auto;">
+      <table class="tbl">
+        <thead><tr><th>#</th><th>Sản phẩm</th><th>Loại báo cáo</th><th>Metrics chính</th><th>Tần suất</th><th>Trạng thái</th></tr></thead>
+        <tbody>
+          <tr><td>1</td><td><strong>TW (Two-Wheeler)</strong></td><td>Daily P&amp;L + Subvention Analysis</td><td>NII, Subvention Income, COF, Margin</td><td>Hàng tháng</td><td><span class="bd bd-prog">Đang XD</span></td></tr>
+          <tr><td>2</td><td><strong>CDL</strong></td><td>P&amp;L by Sub-channel + Tenor</td><td>NII, Balance, Spread, # Accounts</td><td>Hàng tháng</td><td><span class="bd bd-prog">Đang XD</span></td></tr>
+          <tr><td>3</td><td><strong>CRC</strong></td><td>Revolving P&amp;L + Promo Segment</td><td>NII, IPP/ALOP vs Standard split</td><td>Hàng tháng</td><td><span class="bd bd-pend">Chờ data</span></td></tr>
+          <tr><td>4</td><td><strong>PL_NTB</strong></td><td>New-to-Bank P&amp;L</td><td>NII, Risk Segment, DPD</td><td>Hàng tháng</td><td><span class="bd bd-pend">Chờ PPL</span></td></tr>
+          <tr><td>5</td><td><strong>PL_Xsell + Topup</strong></td><td>Cross-sell P&amp;L</td><td>NII, Loyalty metrics, Vintage</td><td>Hàng tháng</td><td><span class="bd bd-pend">Chờ PPL</span></td></tr>
+          <tr><td>6</td><td><strong>Synloan</strong></td><td>Manual Loan P&amp;L</td><td>NII, Tenor, Rate vs Market</td><td>Theo yêu cầu</td><td><span class="bd bd-done">Sẵn sàng</span></td></tr>
+          <tr><td>7</td><td><strong>Tổng hợp Portfolio</strong></td><td>Executive Summary Dashboard</td><td>Tất cả KPIs, Trend, Risk flags</td><td>Hàng tháng</td><td><span class="bd bd-prog">Đang XD</span></td></tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+</div>
+
+<!-- ================================================================ -->
+<!-- TAB 4: DỮ LIỆU & TÍCH HỢP -->
+<!-- ================================================================ -->
+<div id="sec-dt" class="sec">
+  <div class="kpi-row">
+    <div class="kpi"><div class="kpi-lbl">Tổng FTP fields</div><div class="kpi-val">52</div><div class="kpi-sub">Trường dữ liệu cần cho Tool</div></div>
+    <div class="kpi g"><div class="kpi-lbl">Đã xác nhận</div><div class="kpi-val" style="color:var(--green)">42</div><div class="kpi-sub">81% sẵn sàng sử dụng</div></div>
+    <div class="kpi o"><div class="kpi-lbl">Cần làm rõ</div><div class="kpi-val" style="color:var(--orange)">7</div><div class="kpi-sub">Đơn vị, mapping, null</div></div>
+    <div class="kpi r"><div class="kpi-lbl">Thiếu hoàn toàn</div><div class="kpi-val" style="color:var(--red)">3</div><div class="kpi-sub">FTP Curve, COF/VOF Matrix, Channel Map</div></div>
+  </div>
+
+  <!-- 5 Data Sources -->
+  <div class="card full" style="margin-bottom:var(--gap);">
+    <div class="card-ttl"><span class="ic">&#128451;</span> 5 Nguồn dữ liệu cho Tool Excel MVP</div>
+    <div style="overflow-x:auto;">
+      <table class="tbl">
+        <thead><tr><th>Nguồn</th><th>Hệ thống</th><th>Sản phẩm</th><th>Dữ liệu chính</th><th>Phương thức lấy</th><th>Tần suất</th><th>Trạng thái</th></tr></thead>
+        <tbody>
+          <tr><td><strong>1. CMS</strong></td><td>Credit Mgmt System</td><td>CDL, CRC, PL_NTB, PL_Xsell, PL_Topup</td><td>Agreement, ENR, Interest Rate, Tenure, Sale Channel, Debt Group</td><td>Extract CSV/EDW</td><td>Hàng tháng</td><td><span class="bd bd-prog">Đang kiểm tra</span></td></tr>
+          <tr><td><strong>2. LMS/Intellect</strong></td><td>Finacle Core Banking</td><td>TW, CDL (Intellect GL)</td><td>Agreement, ENR, Subvention Rate, Scheme_ID, Tenure</td><td>Extract CSV/EDW</td><td>Hàng tháng</td><td><span class="bd bd-prog">Đang kiểm tra</span></td></tr>
+          <tr><td><strong>3. ALM Config</strong></td><td>Manual (ALM team)</td><td>Tất cả</td><td>COF/VOF Matrix (Fn1), Tenor Mapping (Fn2), Synloan (Fn3)</td><td>Nhập tay vào Tool</td><td>Khi thay đổi</td><td><span class="bd bd-pend">Chờ Treasury</span></td></tr>
+          <tr><td><strong>4. VBMA</strong></td><td>Vietnam Bond Market Assoc.</td><td>Tham chiếu</td><td>Yield curve chuẩn, lãi suất thị trường</td><td>External feed</td><td>Hàng ngày</td><td><span class="bd bd-done">Sẵn sàng</span></td></tr>
+          <tr><td><strong>5. GL</strong></td><td>General Ledger</td><td>Đối chiếu</td><td>GL balance tài khoản 2xxx (lending assets)</td><td>Extract từ Kế toán</td><td>Cuối tháng</td><td><span class="bd bd-pend">Chờ xác nhận</span></td></tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- Key Fields by Group -->
+  <div class="card full" style="margin-bottom:var(--gap);">
+    <div class="card-ttl"><span class="ic">&#128203;</span> 52 FTP Fields phân theo nhóm (click nhóm để xem chi tiết)</div>
+    <div id="fieldAccordion"></div>
+  </div>
+
+  <!-- Data Quality -->
+  <div class="g2">
+    <div class="card">
+      <div class="card-ttl"><span class="ic">&#128202;</span> Chất lượng dữ liệu CMS</div>
+      <div class="ch-wrap"><canvas id="chartCMS"></canvas></div>
+    </div>
+    <div class="card">
+      <div class="card-ttl"><span class="ic">&#128202;</span> Chất lượng dữ liệu LMS</div>
+      <div class="ch-wrap"><canvas id="chartLMS"></canvas></div>
+    </div>
+  </div>
+
+  <!-- Critical data notes -->
+  <div class="card full">
+    <div class="card-ttl"><span class="ic">&#9888;&#65039;</span> 4 vấn đề dữ liệu đặc biệt cần lưu ý</div>
+    <div class="g2" style="margin-bottom:0;">
+      <div style="background:#fff7ed;border:1px solid #fed7aa;border-radius:8px;padding:14px;">
+        <div style="font-weight:800;color:var(--orange);margin-bottom:6px;">CDL/TW — Subvention Model</div>
+        <div style="font-size:12px;">Lãi suất CDL/TW ≈ 0.01% (do dealer bao cấp), nhưng doanh thu thực = <strong>Subvention Rate</strong>. Công thức đặc biệt: <br><code style="background:#f1f5f9;padding:2px 6px;border-radius:4px;">Gross Rate = INT_RATE + SUBVENTION_RATE</code><br>Nếu bỏ sót Subvention, P&amp;L CDL/TW sẽ âm sai lệch hoàn toàn.</div>
+      </div>
+      <div style="background:#fef2f2;border:1px solid #fecaca;border-radius:8px;padding:14px;">
+        <div style="font-weight:800;color:var(--red);margin-bottom:6px;">CRC — IPP &amp; ALOP (Promo 0%)</div>
+        <div style="font-size:12px;">Một số sản phẩm CRC có lãi suất 0% (chương trình khuyến mãi IPP / ALOP). Cần <strong>tách riêng logic P&amp;L</strong> cho nhóm này — NII = −COF/VOF (loss-leader) và ghi nhận doanh thu từ phí dịch vụ thay thế.</div>
+      </div>
+      <div style="background:#fef3c7;border:1px solid #fcd34d;border-radius:8px;padding:14px;">
+        <div style="font-weight:800;color:var(--yellow);margin-bottom:6px;">Đơn vị lãi suất không đồng nhất</div>
+        <div style="font-size:12px;">CMS: <code style="background:#f1f5f9;padding:2px 5px;border-radius:3px;">INT_RATE = 39</code> (nghĩa là 39%/năm) &nbsp;↔&nbsp; LMS: <code style="background:#f1f5f9;padding:2px 5px;border-radius:3px;">EFF_RATE = 0.39</code> (decimal). Schedule Rate CMS = basis points ×100 (vd: 3,900,000 = 39%). Phải chuẩn hóa trước khi tính.</div>
+      </div>
+      <div style="background:#ede9fe;border:1px solid #c4b5fd;border-radius:8px;padding:14px;">
+        <div style="font-weight:800;color:var(--purple);margin-bottom:6px;">CRC Overlap: CMS vs LMS</div>
+        <div style="font-size:12px;">Một số tài khoản CRC có thể tồn tại ở cả CMS lẫn LMS → nguy cơ <strong>double-count balance và income</strong>. Đã lên lịch xác nhận với Data Center ngày <strong>28/03/2026</strong>. Nếu có overlap: CMS là nguồn ưu tiên (primary).</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ================================================================ -->
+<!-- TAB 5: VƯỚNG MẮC & RỦI RO -->
+<!-- ================================================================ -->
+<div id="sec-bl" class="sec">
+  <div class="kpi-row">
+    <div class="kpi r"><div class="kpi-lbl">Critical Blockers</div><div class="kpi-val" style="color:var(--red)">3</div><div class="kpi-sub">Cần xử lý ngay</div></div>
+    <div class="kpi o"><div class="kpi-lbl">High Priority</div><div class="kpi-val" style="color:var(--orange)">2</div><div class="kpi-sub">Xử lý trong tháng 4</div></div>
+    <div class="kpi y"><div class="kpi-lbl">Medium</div><div class="kpi-val" style="color:var(--yellow)">1</div><div class="kpi-sub">Có thể sau</div></div>
+    <div class="kpi"><div class="kpi-lbl">Deadlines tới</div><div class="kpi-val">4</div><div class="kpi-sub">28/3 · 4/4 · 25/4 · 2/5</div></div>
+  </div>
+
+  <div id="blockerList"></div>
+
+  <div class="drawer" id="blk-drawer">
+    <button class="drawer-close" onclick="closeDrawer('blk-drawer')">&#10005;</button>
+    <div id="blk-drawer-content"></div>
+  </div>
+
+  <!-- Proposals -->
+  <div class="card full">
+    <div class="card-ttl" style="color:var(--green);"><span class="ic">&#128161;</span> Đề xuất xử lý để vượt tiến độ</div>
+    <div class="prop">
+      <div class="prop-ttl">1. Escalate 3 P0 items lên Giám đốc phê duyệt trước 25/3</div>
+      <div class="prop-body">CRC Overlap (gặp Data Center 28/3), FTP Curve (yêu cầu Treasury cấp trước 25/4), Channel Mapping (MIS cung cấp trước 4/4). Nếu không có 3 items này, TOOL EXCEL sẽ không tính được P&amp;L chính xác.</div>
+    </div>
+    <div class="prop">
+      <div class="prop-ttl">2. Dùng VCB reference rates làm FTP Curve tạm thời</div>
+      <div class="prop-body">Trong khi chờ Treasury cung cấp COF/VOF matrix chính thức, dùng lãi suất VCB công bố + premium 50-100bps để demo TOOL EXCEL. Cho phép test toàn bộ tính năng tool trước, điền số liệu thực sau.</div>
+    </div>
+    <div class="prop">
+      <div class="prop-ttl">3. CMS channel phân loại "Chưa xác định" trong TOOL EXCEL</div>
+      <div class="prop-body">Trong khi chờ Channel Mapping table từ MIS, tạm thời group CMS dưới nhãn "Unclassified" cho toàn bộ phân tích kênh. LMS vẫn có BOM_CHANNEL rõ ràng (POS/DSA/TSA/3PT/IH) — đủ để demo kênh cho lãnh đạo.</div>
+    </div>
+    <div class="prop">
+      <div class="prop-ttl">4. Defer Fn7 (Integration: Tích hợp, thu thập dữ liệu) đang khó khăn chọn nguồn, và mapping</div>
+      <div class="prop-body">Fn1-Fn6 có thể hoàn thành và deliver độc lập. Fn7 (Integration) đang phụ thuộc vào dữ liệu được truy cập từ BIC/ IT, điều này ảnh hưởng đến tính năng P&amp;L chính của TOOL EXCEL.</div>
+    </div>
+    <div class="prop">
+      <div class="prop-ttl">5. Họp Working Group hàng tuần với BIC/IT/Treasury/ALM</div>
+      <div class="prop-body">Thành lập nhóm làm việc liên phòng ban họp mỗi thứ Hai để unblock nhanh các issues dữ liệu. Mục tiêu: giảm thời gian chờ phản hồi từ 2-3 tuần xuống còn 3-5 ngày, đảm bảo tiến độ 30/06.</div>
+    </div>
+  </div>
+
+  <!-- Risk Chart -->
+  <div class="card full">
+    <div class="card-ttl"><span class="ic">&#128202;</span> Tác động rủi ro đến tiến độ TOOL EXCEL</div>
+    <div class="ch-wrap"><canvas id="chartRisk"></canvas></div>
+  </div>
+</div>
+
+<!-- ================================================================ -->
+<!-- TAB 6: SAU TOOL EXCEL -->
+<!-- ================================================================ -->
+<div id="sec-nx" class="sec">
+  <div class="kpi-row">
+    <div class="kpi o"><div class="kpi-lbl">Phase tiếp theo</div><div class="kpi-val" style="font-size:20px;color:var(--orange)">Phase 4</div><div class="kpi-sub">Risk-adjusted FTP</div></div>
+    <div class="kpi"><div class="kpi-lbl">Phase 5</div><div class="kpi-val" style="font-size:20px;">IT Auto</div><div class="kpi-sub">ETL + SQL Engine</div></div>
+    <div class="kpi g"><div class="kpi-lbl">Go-Live hệ thống</div><div class="kpi-val" style="color:var(--green);font-size:20px;">30/11/2026</div><div class="kpi-sub">Báo cáo đầu tiên T9/2026</div></div>
+  </div>
+
+  <div class="card full">
+    <div class="card-ttl"><span class="ic">&#128640;</span> Lộ trình sau TOOL EXCEL — 3 Phase tiếp theo</div>
+    <div style="overflow-x:auto;">
+      <table class="tbl">
+        <thead><tr><th>Phase</th><th>Nội dung</th><th>Timeline</th><th>Giao phẩm chính</th><th>Điều kiện tiên quyết</th></tr></thead>
+        <tbody>
+          <tr style="background:#fff7ed;">
+            <td><strong>Phase 4</strong><br><span class="bd bd-pend">Chờ TOOL EXCEL</span></td>
+            <td>Risk-Adjusted FTP + Phân tích Vintage</td>
+            <td>T7/2026</td>
+            <td>DPD/NPL premium, Vintage analysis, TOOL EXCEL v2.0</td>
+            <td>TOOL EXCEL GO decision + Risk data từ Risk team</td>
+          </tr>
+          <tr style="background:#eff6ff;">
+            <td><strong>Phase 5</strong><br><span class="bd bd-pend">Chờ TOOL EXCEL</span></td>
+            <td>Tự động hoá — IT Build &amp; ETL Pipeline</td>
+            <td>T7-T10/2026</td>
+            <td>ETL automated pipeline, SQL Calculation Engine, BI Dashboard (Power BI/Tableau)</td>
+            <td>BRD finalize + IT resources confirmed</td>
+          </tr>
+          <tr style="background:#dcfce7;">
+            <td><strong>Phase 6</strong><br><span class="bd bd-pend">Chờ TOOL EXCEL</span></td>
+            <td>UAT + Go-Live + Maintenance</td>
+            <td>T10-T11/2026</td>
+            <td>UAT sign-off, Training material, Runbook, Go-Live checklist</td>
+            <td>Phase 5 complete, ALCO approval FTP Policy</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <div class="card full">
+    <div class="card-ttl"><span class="ic">&#128203;</span> 10 Giới hạn của TOOL EXCEL (không có trong Phase 3)</div>
+    <div style="overflow-x:auto;">
+      <table class="tbl">
+        <thead><tr><th>#</th><th>Giới hạn</th><th>Mô tả</th><th>Có trong Phase</th></tr></thead>
+        <tbody>
+          <tr><td>L1</td><td>Không có Risk Adjustment</td><td>DPD/NPL premium chưa được tính vào FTP</td><td>Phase 4</td></tr>
+          <tr><td>L2</td><td>Không có Floating Rate</td><td>Tất cả lãi suất giả định cố định</td><td>Phase 4</td></tr>
+          <tr><td>L3</td><td>Không có Prepayment Model</td><td>Dùng kỳ hạn hợp đồng, không theo hành vi thực</td><td>Phase 4</td></tr>
+          <tr><td>L4</td><td>Manual Refresh Only</td><td>Chưa tự động — người dùng phải tự load dữ liệu</td><td>Phase 5</td></tr>
+          <tr><td>L5</td><td>Excel-only, không có DB</td><td>Không có database nền, bị giới hạn dung lượng</td><td>Phase 5</td></tr>
+          <tr><td>L6</td><td>Không có Off-Balance Sheet</td><td>L/C, bảo lãnh, cam kết ngoại bảng chưa được tính</td><td>Phase 5</td></tr>
+          <tr><td>L7</td><td>Không có Equity FTP</td><td>Vốn chủ sở hữu chưa được phân bổ chi phí</td><td>Chờ ALCO policy</td></tr>
+          <tr><td>L8</td><td>Báo cáo tháng, không phải ngày</td><td>TOOL EXCEL tính theo tháng; daily recalc có trong Phase 5</td><td>Phase 5</td></tr>
+          <tr><td>L9</td><td>Không có FTP Reserve Accounting</td><td>Chỉ tính P&amp;L impact, không hạch toán balance sheet</td><td>Chờ ALCO</td></tr>
+          <tr><td>L10</td><td>Không có Behavioral CASA</td><td>CASA treated as Day 0; behavioral maturity analysis sau</td><td>Phase 4</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+</div>
+
+</div><!-- end wrap -->
+
+<div style="text-align:center;padding:14px;color:var(--gray);font-size:11px;border-top:1px solid #e2e8f0;">
+  FTP Tool Excel MVP Report &bull; Trung tâm ALM &bull; 16/03/2026 &bull; Confidential — Dành cho nội bộ
+</div>
+
+<!-- ================================================================ -->
+<!-- SCRIPTS -->
+<!-- ================================================================ -->
+<script>
+// ===== DATA =====
+const SCREENS = [
+  {id:'Fn1',name:'Bảng COF/VOF Input',type:'Input',scope:'TOOL EXCEL',status:'done',pct:100,
+   src:'ALM Manual',
+   desc:'Ma trận COF/VOF 18×18 (Contract Tenor × Reset Tenor). Maker-Checker workflow. Nhập lãi suất FTP bán vốn (%/năm) cho từng ô [Tenor HĐ × Tenor ĐCLS]. 6 buttons: Thêm mới, Sửa, Gửi duyệt, Từ chối, Lưu, Xem lịch sử.',
+   fields:['Ngày hiệu lực','Trạng thái (Draft/Pending/Approved)','Maker / Checker','Matrix 18×18 lãi suất COF/VOF','Sản phẩm tín dụng (dropdown)','Ghi chú'],
+   note:'Đây là bảng tra quan trọng nhất — mọi tính toán COF/VOF đều lookup từ đây.'
+  },
+  {id:'Fn2',name:'Tenor COF/VOF Mapping',type:'Config',scope:'TOOL EXCEL',status:'done',pct:100,
+   src:'ALM Manual',
+   desc:'Bảng ánh xạ kỳ hạn thực tế (ngày) sang FTP Tenor bucket. 22 mức từ ON đến >15Y. Mỗi dòng gồm: FTP Tenor label, Ngày Min, Ngày Max, Kỳ hạn chuẩn.',
+   fields:['FTP Tenor (ON/1W/2W.../12M/1Y-2Y/.../&gt;15Y)','Ngày Min','Ngày Max','Kỳ hạn chuẩn (N×30 ngày)','Trạng thái (Active/Inactive)'],
+   note:'22 tenor buckets: ON(1-6d), 1W(7-13d), 1M(28-45d), 12M(346-375d), 1Y-2Y(376-900d)...'
+  },
+  {id:'Fn3',name:'Input Synloan',type:'Input',scope:'TOOL EXCEL',status:'done',pct:100,
+   src:'ALM Manual',
+   desc:'Form nhập tay khoản vay hợp vốn (Syndicated Loan) của ALM. 15 fields bao gồm: Agreement No, ENR, Interest Rate, Ngày giải ngân, Ngày đáo hạn. Công thức tính tự động: Tenor (ngày) = Contract End − Disbursal.',
+   fields:['Agreement No.','ENR (số dư)','Interest Rate (%/năm)','Ngày giải ngân','Ngày đáo hạn','Tenure (tháng)','Kênh','Sản phẩm','FTP Tenor (tự tính)','COF/VOF (tự lookup)','Margin (tự tính)'],
+   note:'Dùng khi ALM tham gia hợp vốn — nhập tay, không kéo từ hệ thống.'
+  },
+  {id:'Fn4',name:'P&L Tổng hợp',type:'Output',scope:'TOOL EXCEL',status:'done',pct:100,
+   src:'CMS + LMS + ALM',
+   desc:'Báo cáo tổng hợp P&L theo 4 chiều: Product × Channel × Tenor × Month. Pivot table với các chỉ tiêu: Số dư bình quân, COF/VOF bình quân, Lãi suất cho vay bình quân, Margin, NII. Bộ lọc: Date picker.',
+   fields:['Ngày báo cáo','Sản phẩm','Kênh bán','Kỳ hạn','Số dư bình quân/ngày','LS FTP (COF/VOF)','LS cho vay','Margin','Lãi cho vay (tổng)','Lãi FTP (tổng)','NII'],
+   note:'KPI report chính cho lãnh đạo. NII = Total Interest − Total COF/VOF.'
+  },
+  {id:'Fn4A',name:'Cross-tab Tenor × Product',type:'Output',scope:'TOOL EXCEL',status:'prog',pct:60,
+   src:'CMS + LMS',
+   desc:'Pivot cross-tab: Hàng = 22 Tenor buckets, Cột = 7 Product lines. Cell = P&L/Balance/Rate/COF/VOF. Giúp nhận diện rủi ro tập trung kỳ hạn và tái định giá.',
+   fields:['Tenor buckets (22 mức)','Product lines (7 sản phẩm)','P&amp;L / Balance / Spread tại mỗi ô'],
+   note:'Đang xây dựng — cần COF/VOF Matrix từ Treasury để complete.'
+  },
+  {id:'Fn4B',name:'Product × Tenor Hierarchical',type:'Output',scope:'TOOL EXCEL',status:'prog',pct:60,
+   src:'CMS + LMS',
+   desc:'Drill-down theo thứ bậc: Product → Sub-product → Tenor. Cùng chỉ tiêu như Fn4 nhưng góc nhìn theo sản phẩm, thuận tiện cho phân tích profitability từng dòng sản phẩm.',
+   fields:['Product (Level 1)','Sub-product (Level 2)','Tenor breakdown','P&amp;L metrics'],
+   note:'Đang xây dựng — liên kết với Fn4A, dùng cùng dữ liệu nguồn.'
+  },
+  {id:'Fn5',name:'Daily P&L Detail',type:'Output',scope:'TOOL EXCEL',status:'prog',pct:50,
+   src:'CMS + LMS',
+   desc:'Chi tiết P&L theo từng ngày trong tháng, phân tách theo Product × Sub-product. Granularity cao hơn Fn4 (daily vs monthly). Dùng để phân tích biến động bất thường trong tháng.',
+   fields:['Ngày','Sản phẩm / Sub-product','Số dư ngày','Lãi ngày','COF/VOF ngày','NII ngày'],
+   note:'Đang xây dựng — bắt buộc có dữ liệu daily balance từ CMS/LMS.'
+  },
+  {id:'Fn6',name:'Loan Transaction Detail',type:'Detail',scope:'TOOL EXCEL',status:'prog',pct:40,
+   src:'CMS + LMS',
+   desc:'Cấp độ chi tiết nhất: từng khoản vay với đầy đủ 29 fields bao gồm tính toán FTP. Mỗi hàng = 1 Agreement Number. Dùng để audit, spot-check, và phân tích sâu.',
+   fields:['Account No / Contract No','Plan No (CMS)','Scheme ID','ENR (dư nợ)','Interest Rate','Disbursal Date','Contract End Date','Tenure (months)','Tenor (days, computed)','FTP Tenor (lookup Fn2)','COF/VOF (lookup Fn1)','Margin','Lãi FTP/ngày','Lãi CV/ngày','Sale Channel','Sub-channel','Debt Group (1-5)'],
+   note:'29 fields per loan. Đây là "source of truth" cho mọi báo cáo tổng hợp.'
+  },
+  {id:'Fn7',name:'Integration',type:'Control',scope:'Full',status:'pend',pct:0,
+   src:'GL (Kế toán)',
+   desc:'Đối chiếu tổng dư nợ FTP với GL thực tế. Validation: Chênh lệch < 5% (TOOL EXCEL), < 1% (Full). Trạng thái: OK / Warning / Error theo tài khoản GL 2xxx.',
+   fields:['Ngày báo cáo','Tài khoản GL (2xxx)','Mô tả TK','Số dư GL thực','Số dư FTP (Σ Fn6)','Chênh lệch','Tỷ lệ chênh lệch (%)','Trạng thái','Ghi chú'],
+   note:'Chờ dữ liệu GL từ Kế toán. Có thể defer sang Phase 4 nếu không kịp 30/06.'
+  },
+  {id:'PL1',name:'Product-Channel Master',type:'Reference',scope:'TOOL EXCEL',status:'done',pct:100,
+   src:'MIS / Business',
+   desc:'Bảng master data mapping 64 dòng: TW/CDL/PL/CRC/Banca variants → Standard Channel names. Dùng làm lookup cho phân tích kênh trong Fn4/Fn5.',
+   fields:['Product Code','Sub-product Code','Standard Channel Name','Source System'],
+   note:'Đã hoàn thành. 64 rows mapping toàn bộ product-channel combinations.'
+  },
+  {id:'REF2',name:'FTP Rate & COF/VOF Reference',type:'Reference',scope:'Full',status:'pend',pct:0,
+   src:'Treasury / ALM',
+   desc:'Bảng tra FTP rate và COF/VOF Matrix chuẩn, dành cho Full system. Trong TOOL EXCEL, thay thế bằng Fn1 + Fn2 nhập tay. Phase 5 sẽ tự động kéo từ Treasury system.',
+   fields:['FTP Rate by Tenor','COF/VOF by Channel × Product × Tenor','Effective Date','Version'],
+   note:'Chưa bắt đầu — chờ Treasury finalize FTP curve và COF/VOF Matrix.'
+  },
+];
+
+const BLOCKERS = [
+  {id:'B1',sev:'critical',title:'1. COF/VOF Matrix & FTP Curve chưa có từ Treasury',
+   desc:'FTP Curve theo 22 tenor buckets và COF/VOF Matrix 18×18 là input BẮT BUỘC để tính toán P&L. Hiện Treasury chưa cung cấp. Đây là blocker lớn nhất của TOOL EXCEL.',
+   owner:'Treasury / ALM',deadline:'25/04/2026',
+   impact:'Không tính được P&L nếu không có COF/VOF. Tất cả Fn4-Fn6 sẽ cho kết quả rỗng.',
+   mitigation:'(1) Yêu cầu Treasury cung cấp sớm. (2) Tạm dùng lãi suất VCB công bố + 50-100bps premium để demo TOOL EXCEL. (3) Escalate lên CFO nếu trễ quá 1 tuần.'
+  },
+  {id:'B2',sev:'critical',title:'2. CRC Overlap giữa CMS và LMS — nguy cơ double-count',
+   desc:'Một số tài khoản CRC có thể tồn tại ở cả CMS và LMS. Nếu không xử lý, tổng balance và income sẽ bị tính hai lần — sai hoàn toàn.',
+   owner:'BIC / Data Center',deadline:'28/03/2026',
+   impact:'Balance/income CRC sai → NII sai → báo cáo không tin cậy.',
+   mitigation:'(1) Họp Data Center 28/03 để xác nhận. (2) Nếu có overlap: dùng CMS làm primary source. (3) Build deduplication query trước khi load vào Tool.'
+  },
+  {id:'B3',sev:'critical',title:'3. Đơn vị dữ liệu không thống nhất CMS vs LMS',
+   desc:'CMS: INT_RATE = 39 (nghĩa là 39%/năm). LMS: EFF_RATE = 0.39 (decimal). Schedule Rate CMS = basis points ×100. Nếu không chuẩn hóa, lãi suất bị sai hệ số 100.',
+   owner:'ALM / BIC / IT',deadline:'04/04/2026',
+   impact:'Margin = Lending Rate − COF/VOF sẽ sai nếu đơn vị không đồng nhất.',
+   mitigation:'(1) Thống nhất quy ước: tất cả dùng decimal format (%/100). (2) Build conversion function trong Excel. (3) Validate bằng sample comparison với GL.'
+  },
+  {id:'B4',sev:'high',title:'4. Channel Mapping (SCHEME_ID → Tên kênh) chưa có',
+   desc:'CMS dùng SCHEME_ID là con số (38 giá trị khác nhau) không có tên kênh rõ ràng. Phân tích P&L theo kênh cho CMS sẽ không thể thực hiện.',
+   owner:'MIS / Business',deadline:'04/04/2026',
+   impact:'Không segment được CMS P&L theo kênh (POS/DSA/TSA...). LMS vẫn dùng được BOM_CHANNEL.',
+   mitigation:'Tạm group CMS dưới "Unclassified" trong TOOL EXCEL. Khi có bảng mapping, update ngay.'
+  },
+  {id:'B5',sev:'high',title:'5. Integration Data cho Fn7 chưa xác nhận khả dụng',
+   desc:'Cần dữ liệu GL tài khoản 2xxx từ bộ phận Kế toán để validate tổng dư nợ FTP. Chưa xác nhận được khả năng extract.',
+   owner:'Finance / Kế toán',deadline:'30/04/2026',
+   impact:'Fn7 Integration không thể hoàn thành nếu không có data phù hợp.',
+   mitigation:'Liên hệ BIC/IT/Finance/Kế toán sớm. Nếu không, trễ deadline 30/06, Fn1-Fn6 vẫn deliver đủ TOOL EXCEL.'
+  },
+  {id:'B6',sev:'medium',title:'6. EFF_RATE (LMS): 63.9% null — không đủ dữ liệu',
+   desc:'Trường EFF_RATE (Effective Interest Rate/APR) trong LMS APP_DIM có đến 63.9% giá trị null. Không thể dùng làm primary rate field.',
+   owner:'ALM / Data Team',deadline:'15/04/2026',
+   impact:'Phải dùng fallback: GROSS_RATE = INTEREST_RATE + SUBVENTION_RATE thay thế.',
+   mitigation:'(1) Dùng GROSS_RATE làm default. (2) EFF_RATE chỉ dùng khi available. (3) Flag trong báo cáo nếu tỷ lệ null > 50%.'
+  },
+];
+
+const FIELDS = [
+  {group:'A. Định danh (Identification)',fields:[
+    {name:'Account No / Contract No',src:'CMS+LMS',status:'done',note:'Primary key'},
+    {name:'Plan Number / Plan Code',src:'CMS',status:'done',note:'CRC transaction ID'},
+    {name:'Scheme ID',src:'CMS+LMS',status:'clarify',note:'Channel proxy — cần mapping table'},
+    {name:'Account F1 (Finacle GL)',src:'LMS',status:'done',note:'GL account link'},
+    {name:'Contract Number',src:'CMS',status:'done',note:'Liability tracking'},
+  ]},
+  {group:'B. Kỳ hạn (Tenor)',fields:[
+    {name:'Original Term / Tenure (months)',src:'CMS+LMS',status:'done',note:'Dùng cho tenor lookup'},
+    {name:'Remaining Term (months)',src:'Computed',status:'done',note:'INIT_TERM − elapsed'},
+    {name:'Term Bucket (S/M/L)',src:'LMS',status:'done',note:'S≤12M, M 13-24M, L≥25M'},
+    {name:'Loan Origination Date',src:'CMS+LMS',status:'done',note:'INIT_DT / DISBURSAL_DT'},
+    {name:'Maturity / Contract End Date',src:'CMS+LMS',status:'done',note:'END_DT / CONTRACT_END_DT'},
+    {name:'Tenor (days)',src:'Computed',status:'done',note:'CONTRACT_END − DISBURSAL'},
+    {name:'FTP Tenor (bucket)',src:'Computed/Fn2',status:'done',note:'Lookup từ Fn2'},
+  ]},
+  {group:'C. Số dư (Balance)',fields:[
+    {name:'Outstanding Balance / ENR',src:'CMS+LMS',status:'clarify',note:'⚠️ Kiểm tra đơn vị VNĐ'},
+    {name:'Principal Balance',src:'CMS',status:'done',note:'BALANCE_PRINCIPLE'},
+    {name:'Original Loan Amount',src:'CMS+LMS',status:'done',note:'INIT_LOAN_AMT / LOAN_AMT'},
+    {name:'Monthly Balance (History)',src:'CMS',status:'done',note:'PLAN_HIST.CURR_BAL_AMT'},
+    {name:'EMI Amount',src:'CMS+LMS',status:'clarify',note:'72.4% null trong LMS'},
+  ]},
+  {group:'D. Lãi suất (Interest Rates)',fields:[
+    {name:'Nominal Interest Rate (%/năm)',src:'CMS+LMS',status:'clarify',note:'⚠️ CMS:×100, LMS:decimal'},
+    {name:'Effective Rate / APR',src:'CMS+LMS',status:'clarify',note:'⚠️ 63.9% null LMS'},
+    {name:'Subvention Rate',src:'LMS',status:'done',note:'Critical cho CDL/TW P&L'},
+    {name:'Gross Rate (Int + Subvention)',src:'Computed',status:'done',note:'INTEREST_RATE + SUBVENTION'},
+    {name:'COF/VOF / FTP Rate',src:'ALM/Treasury',status:'miss',note:'❌ THIẾU — phải cung cấp từ Treasury'},
+  ]},
+  {group:'E. Phân loại sản phẩm (Product)',fields:[
+    {name:'Product (Level 1)',src:'CMS+LMS',status:'done',note:'CARD/CDL/PL/BNPL/TWL/CRC'},
+    {name:'Sub-product / Plan Group',src:'CMS+LMS',status:'done',note:'IPP/CDL_BAU/NTB/XS/TU...'},
+    {name:'Plan Type (R/L/C)',src:'CMS',status:'done',note:'R=Revolving, L=Installment, C=Cash'},
+    {name:'IPP / ALOP Flag',src:'CMS',status:'done',note:'0% interest promo products'},
+  ]},
+  {group:'F. Kênh bán (Channel)',fields:[
+    {name:'BOM Channel (LMS)',src:'LMS',status:'done',note:'POS/DSA/TSA/3PT/IH — rõ ràng'},
+    {name:'Channel (via Scheme ID, CMS)',src:'CMS',status:'miss',note:'❌ THIẾU — chờ mapping table 04/04'},
+    {name:'Sale Channel / Sub-channel',src:'LMS',status:'done',note:'3P/IH + detail'},
+    {name:'Region',src:'LMS',status:'done',note:'Đông/Bắc/Trung/Nam/Tây'},
+  ]},
+  {group:'G-I. Thời gian, Rủi ro, Thu nhập',fields:[
+    {name:'Report/Snapshot Date',src:'CMS+LMS',status:'done',note:'PLAN_DT / F1_DATE'},
+    {name:'DPD (Days Past Due)',src:'LMS',status:'done',note:'0-1823 days, mean ~46'},
+    {name:'Debt Group (1-5)',src:'LMS',status:'done',note:'1-2: Performing, 3-5: NPL'},
+    {name:'Monthly Interest Income',src:'CMS',status:'done',note:'PLAN_HIST.INTEREST_AMT'},
+    {name:'Subvention Amount',src:'LMS',status:'done',note:'Additional revenue CDL/TW'},
+    {name:'FTP Income (bán vốn)',src:'Computed',status:'done',note:'Balance × COF/VOF / 12'},
+    {name:'NII (Net Interest Income)',src:'Computed',status:'done',note:'Total Interest − FTP COF/VOF'},
+  ]},
+];
+
+// ===== NAV =====
+function go(id){
+  document.querySelectorAll('.sec').forEach(s=>s.classList.remove('on'));
+  document.querySelectorAll('.nb').forEach(b=>b.classList.remove('on'));
+  document.getElementById('sec-'+id).classList.add('on');
+  const map={ov:0,sc:1,rp:2,dt:3,bl:4,nx:5};
+  document.querySelectorAll('.nb')[map[id]].classList.add('on');
+  window.scrollTo({top:0,behavior:'smooth'});
+}
+
+// ===== DRAWER =====
+function closeDrawer(id){document.getElementById(id).classList.remove('open');}
+function openRpt(id){
+  document.querySelectorAll('.drawer').forEach(d=>d.classList.remove('open'));
+  document.getElementById(id).classList.add('open');
+  document.getElementById(id).scrollIntoView({behavior:'smooth',block:'nearest'});
+}
+
+// ===== BUILD SCREEN CARDS =====
+function buildScreens(){
+  const colors={done:'c-done',prog:'c-prog',pend:'c-pend',block:'c-block'};
+  const badges={done:'<span class="bd bd-done">✓ Hoàn thành</span>',prog:'<span class="bd bd-prog">⏳ Đang XD</span>',pend:'<span class="bd bd-pend">⏸ Chưa BĐ</span>'};
+  const pclr={done:'pf-g',prog:'pf-b',pend:'pf-y'};
+
+  // Progress list
+  let pHtml='';
+  SCREENS.forEach(s=>{
+    pHtml+=`<div class="prg-row" style="cursor:pointer" onclick="openScDrawer('${s.id}')">
+      <div class="prg-lbl">${s.id} — ${s.name}</div>
+      <div class="prg-track"><div class="prg-fill ${pclr[s.status]}" style="width:${s.pct}%">${s.pct}%</div></div>
+      <div class="prg-dl">${badges[s.status]}</div>
+    </div>`;
+  });
+  document.getElementById('scPrgList').innerHTML=pHtml;
+
+  // Grid cards
+  let gHtml='';
+  SCREENS.forEach(s=>{
+    const sc=s.scope==='Tool Excel'?'<span class="bd bd-Tool Excel">Tool Excel</span>':'<span class="bd bd-full">Full</span>';
+    gHtml+=`<div class="sc-card ${colors[s.status]}" onclick="openScDrawer('${s.id}')">
+      <div class="sc-head"><div class="sc-id">${s.id}</div>${badges[s.status]}</div>
+      <div class="sc-name">${s.name}</div>
+      <div class="sc-desc">${s.desc.substring(0,90)}...</div>
+      <div class="sc-meta">${sc}<span class="bd bd-full">${s.type}</span><span style="font-size:11px;color:var(--gray)">Src: ${s.src}</span></div>
+      <div style="margin-top:8px;"><div class="prg-track" style="height:8px;"><div class="prg-fill ${pclr[s.status]}" style="width:${s.pct}%"></div></div></div>
+    </div>`;
+  });
+  document.getElementById('scGrid').innerHTML=gHtml;
+}
+
+function openScDrawer(id){
+  const s=SCREENS.find(x=>x.id===id);
+  if(!s)return;
+  const status={done:'✓ Hoàn thành',prog:'Đang xây dựng',pend:'Chưa bắt đầu'};
+  let fHtml=s.fields.map(f=>`<li style="margin-bottom:4px;font-size:12px;">&#8226; ${f}</li>`).join('');
+  document.getElementById('sc-drawer-content').innerHTML=`
+    <h4>${s.id} — ${s.name} <span style="font-size:12px;font-weight:400;color:var(--gray)">(${s.type} · Nguồn: ${s.src})</span></h4>
+    <div style="display:flex;gap:10px;margin:10px 0;flex-wrap:wrap;">
+      <span class="bd ${s.status==='done'?'bd-done':s.status==='prog'?'bd-prog':'bd-pend'}">${status[s.status]}</span>
+      <span class="bd ${s.scope==='Tool Excel'?'bd-Tool Excel':'bd-full'}">${s.scope}</span>
+      <span style="font-size:12px;font-weight:700;">Tiến độ: ${s.pct}%</span>
+    </div>
+    <p style="font-size:13px;margin-bottom:10px;">${s.desc}</p>
+    <div style="font-weight:700;font-size:13px;margin-bottom:6px;">Fields / Thông tin trên tính năng:</div>
+    <ul style="list-style:none;padding:0;">${fHtml}</ul>
+    <div style="margin-top:10px;background:#fffbeb;border:1px solid #fcd34d;border-radius:6px;padding:10px;font-size:12px;"><strong>&#128161; Lưu ý:</strong> ${s.note}</div>`;
+  document.getElementById('sc-drawer').classList.add('open');
+  document.getElementById('sc-drawer').scrollIntoView({behavior:'smooth',block:'nearest'});
+}
+
+// ===== BUILD BLOCKERS =====
+function buildBlockers(){
+  const sevClass={critical:'',high:'warn',medium:'info'};
+  const sevBadge={critical:'<span class="bd bd-crit">&#128680; Critical</span>',high:'<span class="bd bd-high">&#9888; High</span>',medium:'<span class="bd bd-med">&#8505; Medium</span>'};
+  let html='';
+  BLOCKERS.forEach(b=>{
+    html+=`<div class="blk-card ${sevClass[b.sev]}" onclick="openBlkDrawer('${b.id}')">
+      <div style="display:flex;justify-content:space-between;align-items:flex-start;flex-wrap:wrap;gap:6px;">
+        <div class="blk-ttl">${b.title}</div>${sevBadge[b.sev]}
+      </div>
+      <div class="blk-desc">${b.desc}</div>
+      <div class="blk-meta"><span>&#128100; ${b.owner}</span><span>&#128197; Deadline: <strong>${b.deadline}</strong></span><span class="lnk">Xem chi tiết &#9654;</span></div>
+    </div>`;
+  });
+  document.getElementById('blockerList').innerHTML=html;
+}
+
+function openBlkDrawer(id){
+  const b=BLOCKERS.find(x=>x.id===id);
+  if(!b)return;
+  document.getElementById('blk-drawer-content').innerHTML=`
+    <h4>${b.title}</h4>
+    <div style="margin:8px 0;"><strong>Tác động:</strong> <span style="color:var(--red);font-size:13px;">${b.impact}</span></div>
+    <div style="margin-bottom:8px;"><strong>Owner:</strong> ${b.owner} &bull; <strong>Deadline:</strong> <span style="color:var(--orange);font-weight:800;">${b.deadline}</span></div>
+    <div style="background:#f0fdf4;border:1px solid #bbf7d0;border-radius:6px;padding:12px;font-size:13px;">
+      <strong style="color:var(--green);">&#128161; Giải pháp đề xuất:</strong><br>${b.mitigation}
+    </div>`;
+  document.getElementById('blk-drawer').classList.add('open');
+  document.getElementById('blk-drawer').scrollIntoView({behavior:'smooth',block:'nearest'});
+}
+
+// ===== BUILD FIELD ACCORDION =====
+function buildFields(){
+  let html='';
+  FIELDS.forEach((g,i)=>{
+    const statusCount={done:0,clarify:0,miss:0};
+    g.fields.forEach(f=>{ statusCount[f.status]=(statusCount[f.status]||0)+1; });
+    let rows=g.fields.map(f=>`<tr>
+      <td>${f.name}</td><td>${f.src}</td>
+      <td><span class="bd ${f.status==='done'?'bd-done':f.status==='miss'?'bd-miss':'bd-pend'}">${f.status==='done'?'✓ Sẵn sàng':f.status==='miss'?'❌ Thiếu':'⚠️ Cần rõ'}</span></td>
+      <td style="font-size:11px;color:var(--gray);">${f.note}</td>
+    </tr>`).join('');
+    html+=`<div>
+      <div class="acc-head" id="acc-h-${i}" onclick="toggleAcc(${i})">
+        <span>${g.group} <span style="font-weight:400;color:var(--gray);font-size:12px;">(${g.fields.length} fields)</span></span>
+        <div style="display:flex;gap:6px;align-items:center;">
+          <span class="bd bd-done" style="font-size:10px;">${statusCount.done||0} OK</span>
+          ${statusCount.clarify?`<span class="bd bd-pend" style="font-size:10px;">${statusCount.clarify} ⚠</span>`:''}
+          ${statusCount.miss?`<span class="bd bd-miss" style="font-size:10px;">${statusCount.miss} ❌</span>`:''}
+          <span class="acc-arrow">&#9654;</span>
+        </div>
+      </div>
+      <div class="acc-body" id="acc-b-${i}">
+        <div style="overflow-x:auto;"><table class="tbl"><thead><tr><th>Trường dữ liệu</th><th>Nguồn</th><th>Trạng thái</th><th>Ghi chú</th></tr></thead><tbody>${rows}</tbody></table></div>
+      </div>
+    </div>`;
+  });
+  document.getElementById('fieldAccordion').innerHTML=html;
+}
+
+function toggleAcc(i){
+  const h=document.getElementById('acc-h-'+i);
+  const b=document.getElementById('acc-b-'+i);
+  h.classList.toggle('open');
+  b.classList.toggle('open');
+}
+
+// ===== CHARTS =====
+const C=['#2563eb','#16a34a','#ea580c','#dc2626','#7c3aed','#0d9488','#d97706','#be185d','#4f46e5','#059669'];
+
+new Chart(document.getElementById('chartScreenProg'),{type:'bar',data:{
+  labels:SCREENS.map(s=>s.id),
+  datasets:[{label:'% Hoàn thành',data:SCREENS.map(s=>s.pct),
+    backgroundColor:SCREENS.map(s=>s.status==='done'?'#22c55eCC':s.status==='prog'?'#3b82f6CC':'#e2e8f0'),
+    borderRadius:5,borderWidth:0}]
+},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false},tooltip:{callbacks:{label:c=>c.parsed.y+'%'}}},
+  scales:{y:{beginAtZero:true,max:100,ticks:{callback:v=>v+'%'}},x:{grid:{display:false}}}}});
+
+new Chart(document.getElementById('chartScreenType'),{type:'doughnut',data:{
+  labels:['Input (3)','Output (5)','Control (1)','Reference (2)'],
+  datasets:[{data:[3,5,1,2],backgroundColor:['#3b82f6CC','#22c55eCC','#f97316CC','#94a3b8CC'],borderColor:'#fff',borderWidth:2}]
+},options:{responsive:true,maintainAspectRatio:false,cutout:'55%',plugins:{legend:{position:'right',labels:{usePointStyle:true,padding:12}}}}});
+
+new Chart(document.getElementById('chartCMS'),{type:'bar',data:{
+  labels:['CRC_PLANS','CAS','LOAN_FULL','PLAN_HIST','SCHEDULE'],
+  datasets:[
+    {label:'Completeness %',data:[98,72,90,88,84],backgroundColor:'#3b82f6CC',borderRadius:4},
+    {label:'Accuracy %',data:[95,70,85,82,78],backgroundColor:'#22c55eCC',borderRadius:4}
+  ]
+},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{position:'top',labels:{usePointStyle:true,padding:10,font:{size:11}}}},
+  scales:{y:{beginAtZero:true,max:100,ticks:{callback:v=>v+'%'}},x:{grid:{display:false},ticks:{font:{size:10}}}}}});
+
+new Chart(document.getElementById('chartLMS'),{type:'bar',data:{
+  labels:['Loan Master','Payment Hist','Product Config','Channel Data','Risk Metrics'],
+  datasets:[
+    {label:'Completeness %',data:[97,95,99,92,88],backgroundColor:'#3b82f6CC',borderRadius:4},
+    {label:'Accuracy %',data:[93,90,97,85,82],backgroundColor:'#22c55eCC',borderRadius:4}
+  ]
+},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{position:'top',labels:{usePointStyle:true,padding:10,font:{size:11}}}},
+  scales:{y:{beginAtZero:true,max:100,ticks:{callback:v=>v+'%'}},x:{grid:{display:false},ticks:{font:{size:10}}}}}});
+
+new Chart(document.getElementById('chartRisk'),{type:'bar',data:{
+  labels:['FTP Curve\n(Treasury)','CRC Overlap\n(BIC/IT)','Đơn vị\n(ALM/IT)','Channel Map\n(MIS)','GL Data\n(Finance)','EFF_RATE\n(Data)'],
+  datasets:[
+    {label:'Mức độ ảnh hưởng',data:[95,85,80,55,45,30],backgroundColor:['#dc2626CC','#dc2626CC','#dc2626CC','#f97316CC','#f97316CC','#d97706CC'],borderRadius:5}
+  ]
+},options:{responsive:true,maintainAspectRatio:false,indexAxis:'y',
+  plugins:{legend:{display:false},tooltip:{callbacks:{label:c=>'Mức ảnh hưởng: '+c.parsed.x+'/100'}}},
+  scales:{x:{beginAtZero:true,max:100},y:{grid:{display:false}}}}});
+
+// ===== EXPORT TO XLS =====
+function exportXLS(){
+  // Build multi-sheet XML spreadsheet
+  const now = new Date().toLocaleDateString('vi-VN');
+
+  function sheetRows(rows){ return rows.map(r=>'<Row>'+r.map(c=>`<Cell><Data ss:Type="String">${String(c).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;')}</Data></Cell>`).join('')+'</Row>').join('\n'); }
+
+  const s1 = sheetRows([
+    ['FTP Tool Excel — BÁO CÁO TIẾN ĐỘ','','',''],
+    ['Trung tâm ALM | Ngày: '+now,'','',''],
+    ['','','',''],
+    ['tính năng','LOẠI','SCOPE','% HOÀN THÀNH','TRẠNG THÁI','NGUỒN DỮ LIỆU','MÔ TẢ'],
+    ...SCREENS.map(s=>[s.id+' — '+s.name, s.type, s.scope, s.pct+'%', s.status==='done'?'Hoàn thành':s.status==='prog'?'Đang xây dựng':'Chưa bắt đầu', s.src, s.desc.substring(0,150)])
+  ]);
+
+  const s2 = sheetRows([
+    ['VƯỚNG MẮC & RỦI RO — TOOL EXCEL Tool Excel','','','',''],
+    ['','','','',''],
+    ['STT','MỨC ĐỘ','NỘI DUNG','OWNER','DEADLINE','TÁC ĐỘNG','GIẢI PHÁP'],
+    ...BLOCKERS.map(b=>[b.id, b.sev.toUpperCase(), b.title, b.owner, b.deadline, b.impact, b.mitigation])
+  ]);
+
+  const s3 = sheetRows([
+    ['52 FTP DATA FIELDS','','',''],
+    ['','','',''],
+    ['NHÓM','TRƯỜNG DỮ LIỆU','NGUỒN','TRẠNG THÁI','GHI CHÚ'],
+    ...FIELDS.flatMap(g=>g.fields.map(f=>[g.group, f.name, f.src, f.status==='done'?'Sẵn sàng':f.status==='miss'?'THIẾU':'Cần làm rõ', f.note]))
+  ]);
+
+  const s4 = sheetRows([
+    ['LỘ TRÌNH SAU Tool Excel','','',''],
+    ['','','',''],
+    ['PHASE','NỘI DUNG','TIMELINE','GIAO PHẨM CHÍNH'],
+    ['Phase 4','Risk-Adjusted FTP + Vintage Analysis','T7/2026','DPD/NPL premium, Vintage analysis, Tool Excel v2.0'],
+    ['Phase 5','Tự động hoá — IT Build & ETL Pipeline','T7-T10/2026','ETL pipeline, SQL engine, BI Dashboard (Power BI)'],
+    ['Phase 6','UAT + Go-Live + Maintenance','T10-T11/2026','UAT sign-off, Training, Runbook, Go-Live'],
+  ]);
+
+  const xml=`<?xml version="1.0" encoding="UTF-8"?>
+<?mso-application progid="Excel.Sheet"?>
+<Workbook xmlns="urn:schemas-microsoft-com:office:spreadsheet"
+ xmlns:ss="urn:schemas-microsoft-com:office:spreadsheet">
+<Styles>
+ <Style ss:ID="H"><Font ss:Bold="1" ss:Size="12"/><Interior ss:Color="#0C1F3F" ss:Pattern="Solid"/><Font ss:Color="#FFFFFF" ss:Bold="1"/></Style>
+ <Style ss:ID="S"><Font ss:Bold="1"/><Interior ss:Color="#DBEAFE" ss:Pattern="Solid"/></Style>
+</Styles>
+<Worksheet ss:Name="Tiến độ tính năng"><Table>${s1}</Table></Worksheet>
+<Worksheet ss:Name="Vướng mắc rủi ro"><Table>${s2}</Table></Worksheet>
+<Worksheet ss:Name="52 FTP Fields"><Table>${s3}</Table></Worksheet>
+<Worksheet ss:Name="Lộ trình sau Tool Excel"><Table>${s4}</Table></Worksheet>
+</Workbook>`;
+
+  const blob=new Blob([xml],{type:'application/vnd.ms-excel'});
+  const url=URL.createObjectURL(blob);
+  const a=document.createElement('a');
+  a.href=url; a.download='FTP_Tool_Excel_Tool Excel_'+now.replace(/\//g,'')+'.xls';
+  a.click(); URL.revokeObjectURL(url);
+}
+
+// ===== INIT =====
+buildScreens();
+buildBlockers();
+buildFields();
+</script>
+</body>
+</html>
