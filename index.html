@@ -659,7 +659,7 @@ const SCREENS = [
    fields:['Ngày hiệu lực','Trạng thái (Draft/Pending/Approved)','Maker / Checker','Matrix 18×18 lãi suất COF/VOF','Sản phẩm tín dụng (dropdown)','Ghi chú'],
    note:'Đây là bảng tra quan trọng nhất — mọi tính toán COF/VOF đều lookup từ đây.'
   },
-  {id:'Fn2',name:'Tenor COF/VOF Mapping',type:'Config',scope:'TOOL EXCEL',status:'done',pct:80,
+  {id:'Fn2',name:'Tenor COF/VOF Mapping',type:'Config',scope:'TOOL EXCEL',status:'prog',pct:80,
    src:'ALM Manual',
    desc:'Bảng ánh xạ kỳ hạn thực tế (ngày) sang FTP Tenor bucket. 22 mức từ ON đến >15Y. Mỗi dòng gồm: FTP Tenor label, Ngày Min, Ngày Max, Kỳ hạn chuẩn.',
    fields:['FTP Tenor (ON/1W/2W.../12M/1Y-2Y/.../&gt;15Y)','Ngày Min','Ngày Max','Kỳ hạn chuẩn (N×30 ngày)','Trạng thái (Active/Inactive)'],
@@ -671,7 +671,7 @@ const SCREENS = [
    fields:['Agreement No.','ENR (số dư)','Interest Rate (%/năm)','Ngày giải ngân','Ngày đáo hạn','Tenure (tháng)','Kênh','Sản phẩm','FTP Tenor (tự tính)','COF/VOF (tự lookup)','Margin (tự tính)'],
    note:'Dùng khi ALM tham gia hợp vốn — nhập tay, không kéo từ hệ thống.'
   },
-  {id:'Fn4',name:'P&L Tổng hợp',type:'Output',scope:'TOOL EXCEL',status:'done',pct:80,
+  {id:'Fn4',name:'P&L Tổng hợp',type:'Output',scope:'TOOL EXCEL',status:'prog',pct:80,
    src:'CMS + LMS + ALM',
    desc:'Báo cáo tổng hợp P&L theo 4 chiều: Product × Channel × Tenor × Month. Pivot table với các chỉ tiêu: Số dư bình quân, COF/VOF bình quân, Lãi suất cho vay bình quân, Margin, NII. Bộ lọc: Date picker.',
    fields:['Ngày báo cáo','Sản phẩm','Kênh bán','Kỳ hạn','Số dư bình quân/ngày','LS FTP (COF/VOF)','LS cho vay','Margin','Lãi cho vay (tổng)','Lãi FTP (tổng)','NII'],
